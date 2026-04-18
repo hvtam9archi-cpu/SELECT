@@ -10,7 +10,7 @@ namespace UnifiedAutoCADTools.Commands
 {
 	public class ReselectCommands
 	{
-		[CommandMethod("RS", CommandFlags.Modal | CommandFlags.UsePickSet)]
+		[CommandMethod("RS")]
 		public void ReselectObjects()
 		{
 			Document doc = Application.DocumentManager.MdiActiveDocument;
