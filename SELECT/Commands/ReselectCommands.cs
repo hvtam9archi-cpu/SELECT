@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -7,54 +8,51 @@ using Exception = System.Exception;
 
 namespace UnifiedAutoCADTools.Commands
 {
-    public class ReselectCommands
-    {
-        [CommandMethod("RS")]
-        public void ReselectObjects()
-        {
-            Document doc = Application.DocumentManager.MdiActiveDocument;
-            Editor ed = doc.Editor;
+	public class ReselectCommands
+	{
+		[CommandMethod("RS")]
+		public void ReselectObjects()
+		{
+			Document doc = Application.DocumentManager.MdiActiveDocument;
+			Editor ed = doc.Editor;
 
-            if (PluginInitialization.LastSelectedIds == null || PluginInitialization.LastSelectedIds.Length == 0)
-            {
-                ed.WriteMessage("\nChưa có đối tượng nào để chọn lại.");
-                return;
-            }
+			if (PluginInitialization.LastSelectedIds == null || PluginInitialization.LastSelectedIds.Length == 0)
+			{
+				ed.WriteMessage("\n[Hệ thống] Chưa có đối tượng nào để chọn lại.");
+				return;
+			}
 
-            try
-            {
-                ObjectIdCollection validIds = new ObjectIdCollection();
+			try
+			{
+				List<ObjectId> validIds = new List<ObjectId>(PluginInitialization.LastSelectedIds.Length);
 
-                // Transaction ngắn chỉ để check ID validity
-                using (Transaction tr = doc.TransactionManager.StartTransaction())
-                {
-                    foreach (ObjectId id in PluginInitialization.LastSelectedIds)
-                    {
-                        if (id.IsValid && !id.IsErased && id.Database == doc.Database)
-                        {
-                            validIds.Add(id);
-                        }
-                    }
-                    tr.Commit();
-                }
+				using (OpenCloseTransaction tr = doc.TransactionManager.StartOpenCloseTransaction())
+				{
+					foreach (ObjectId id in PluginInitialization.LastSelectedIds)
+					{
+						if (id.IsValid && !id.IsNull && !id.IsErased && id.Database == doc.Database)
+						{
+							validIds.Add(id);
+						}
+					}
+					tr.Commit();
+				}
 
-                if (validIds.Count > 0)
-                {
-                    ObjectId[] idsArray = new ObjectId[validIds.Count];
-                    validIds.CopyTo(idsArray, 0);
-                    ed.SetImpliedSelection(idsArray);
-                    ed.WriteMessage("\nĐã chọn lại: {0} đối tượng.", validIds.Count);
-                }
-                else
-                {
-                    ed.WriteMessage("\nCác đối tượng cũ không còn tồn tại hoặc ở bản vẽ khác.");
-                    PluginInitialization.LastSelectedIds = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                ed.WriteMessage("\nLỗi RS: " + ex.Message);
-            }
-        }
-    }
+				if (validIds.Count > 0)
+				{
+					ed.SetImpliedSelection(validIds.ToArray());
+					ed.WriteMessage($"\nĐã khôi phục vùng chọn: {validIds.Count} đối tượng.");
+				}
+				else
+				{
+					ed.WriteMessage("\nCác đối tượng cũ đã bị xóa hoặc thuộc bản vẽ khác.");
+					PluginInitialization.LastSelectedIds = null; // Clean up memory
+				}
+			}
+			catch (Exception ex)
+			{
+				ed.WriteMessage($"\nLỗi RS: {ex.Message}");
+			}
+		}
+	}
 }
