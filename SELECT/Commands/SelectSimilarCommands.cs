@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -12,36 +12,7 @@ namespace UnifiedAutoCADTools.Commands
 {
 	public class SelectSimilarCommands
 	{
-		private class SysVarGuard : IDisposable
-		{
-			private readonly Dictionary<string, object> _originalValues = new Dictionary<string, object>();
-			private readonly string[] _varsToMonitor = { "PICKFIRST", "PICKADD" };
 
-			public SysVarGuard()
-			{
-				foreach (var name in _varsToMonitor)
-				{
-					try { _originalValues[name] = Application.GetSystemVariable(name); }
-					catch { /* Bỏ qua nếu biến không tồn tại */ }
-				}
-			}
-
-			public void Dispose()
-			{
-				foreach (var pair in _originalValues)
-				{
-					try
-					{
-						object currentVal = Application.GetSystemVariable(pair.Key);
-						if (!currentVal.Equals(pair.Value))
-						{
-							Application.SetSystemVariable(pair.Key, pair.Value);
-						}
-					}
-					catch { }
-				}
-			}
-		}
 
 		private class EntityProperties
 		{
@@ -65,7 +36,7 @@ namespace UnifiedAutoCADTools.Commands
 			PromptSelectionResult implied = ed.SelectImplied();
 			if (implied.Status == PromptStatus.OK && implied.Value != null && implied.Value.Count > 0)
 			{
-				ed.SetImpliedSelection(new ObjectId[0]);
+				ed.SetImpliedSelection(Array.Empty<ObjectId>());
 				return implied.Value;
 			}
 
@@ -117,9 +88,9 @@ namespace UnifiedAutoCADTools.Commands
 							Entity sampleEnt = tr.GetObject(sampleObj.ObjectId, OpenMode.ForRead) as Entity;
 							if (sampleEnt == null) continue;
 
-							string type = sampleEnt.GetType().Name;
+							string dxfName = sampleEnt.GetRXClass().DxfName;
 							string blockName = (sampleEnt is BlockReference) ? GeomUtils.GetEffectiveName(sampleEnt, tr) : "";
-							criteriaList.Add(new SearchCriteria { Type = type, BlockName = blockName });
+							criteriaList.Add(new SearchCriteria { Type = dxfName, BlockName = blockName });
 						}
 
 						if (criteriaList.Count > 0)
@@ -129,15 +100,15 @@ namespace UnifiedAutoCADTools.Commands
 								Entity ent = tr.GetObject(sobj.ObjectId, OpenMode.ForRead) as Entity;
 								if (ent == null) continue;
 
-								string entType = ent.GetType().Name;
+								string entDxfName = ent.GetRXClass().DxfName;
 								string entBlockName = (ent is BlockReference) ? GeomUtils.GetEffectiveName(ent, tr) : "";
 
 								bool match = false;
 								foreach (var criteria in criteriaList)
 								{
-									if (entType == criteria.Type)
+									if (entDxfName == criteria.Type)
 									{
-										if (entType == "BlockReference")
+										if (entDxfName == "INSERT" || ent is BlockReference)
 										{
 											if (entBlockName.Equals(criteria.BlockName, StringComparison.OrdinalIgnoreCase))
 											{

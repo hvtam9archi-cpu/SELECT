@@ -1,5 +1,5 @@
-﻿using System;
-using System.Xml.Linq;
+using System;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -15,7 +15,8 @@ namespace UnifiedAutoCADTools
 {
 	public class PluginInitialization : IExtensionApplication
 	{
-		public static ObjectId[] LastSelectedIds = null;
+		// Tối ưu: Lưu Selection cuối cùng cho TỪNG TÀI LIỆU
+		public static Dictionary<Document, ObjectId[]> LastSelectedIdsDict { get; private set; } = new Dictionary<Document, ObjectId[]>();
 
 		public void Initialize()
 		{
@@ -23,12 +24,18 @@ namespace UnifiedAutoCADTools
 			{
 				DocumentCollection docManager = Application.DocumentManager;
 
-				if (docManager.MdiActiveDocument != null)
+				// 1. Quét qua TOÀN BỘ bản vẽ đang mở để đăng ký event (xử lý case NETLOAD muộn)
+				foreach (Document doc in docManager)
 				{
-					docManager.MdiActiveDocument.ImpliedSelectionChanged += OnImpliedSelectionChanged;
+					if (doc != null)
+					{
+						doc.ImpliedSelectionChanged += OnImpliedSelectionChanged;
+					}
 				}
 
+				// 2. Lắng nghe lúc tạo mới VÀ đóng tài liệu
 				docManager.DocumentCreated += OnDocumentCreated;
+				docManager.DocumentDestroyed += OnDocumentDestroyed;
 			}
 			catch (Exception ex)
 			{
@@ -38,21 +45,25 @@ namespace UnifiedAutoCADTools
 
 		public void Terminate()
 		{
-			// Dọn dẹp an toàn khi Plugin bị unload hoặc AutoCAD tắt
 			try
 			{
 				DocumentCollection docManager = Application.DocumentManager;
 				if (docManager != null)
 				{
 					docManager.DocumentCreated -= OnDocumentCreated;
+					docManager.DocumentDestroyed -= OnDocumentDestroyed;
+
 					foreach (Document doc in docManager)
 					{
-						doc.ImpliedSelectionChanged -= OnImpliedSelectionChanged;
+						if (doc != null)
+						{
+							doc.ImpliedSelectionChanged -= OnImpliedSelectionChanged;
+						}
 					}
 				}
-				LastSelectedIds = null;
+				LastSelectedIdsDict.Clear();
 			}
-			catch { /* Bỏ qua lỗi trong quá trình Terminate */ }
+			catch { /* Im lặng khi Terminate */ }
 		}
 
 		private void OnDocumentCreated(object sender, DocumentCollectionEventArgs e)
@@ -63,6 +74,22 @@ namespace UnifiedAutoCADTools
 			}
 		}
 
+		private void OnDocumentDestroyed(object sender, DocumentDestroyedEventArgs e)
+		{
+			// Tránh Memory Leak do giữ mảng ObjectId của bản vẽ đã bị tắt
+			var keysToRemove = new List<Document>();
+			foreach (var key in LastSelectedIdsDict.Keys)
+			{
+				if (key.IsDisposed)
+					keysToRemove.Add(key);
+			}
+
+			foreach (var key in keysToRemove)
+			{
+				LastSelectedIdsDict.Remove(key);
+			}
+		}
+
 		private void OnImpliedSelectionChanged(object sender, EventArgs e)
 		{
 			if (!(sender is Document doc)) return;
@@ -70,14 +97,16 @@ namespace UnifiedAutoCADTools
 			try
 			{
 				PromptSelectionResult result = doc.Editor.SelectImplied();
+
+				// Cập nhật lại list kể cả khi người dùng nhấn Esc bỏ chọn (Selection rỗng)
 				if (result.Status == PromptStatus.OK && result.Value != null && result.Value.Count > 0)
 				{
-					LastSelectedIds = result.Value.GetObjectIds();
+					LastSelectedIdsDict[doc] = result.Value.GetObjectIds();
 				}
 			}
 			catch
 			{
-				// Event này gọi liên tục nên bắt lỗi âm thầm để không spam Command Line
+				// Silent catch, theo đúng logic cũ. Không block AutoCAD nếu có sự cố background selection.
 			}
 		}
 	}

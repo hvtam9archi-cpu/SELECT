@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -116,7 +116,7 @@ namespace UnifiedAutoCADTools.Commands
 			PromptSelectionResult impliedSel = ed.SelectImplied();
 			if (impliedSel.Status == PromptStatus.OK && impliedSel.Value.Count > 0)
 			{
-				ed.SetImpliedSelection(new ObjectId[0]);
+				ed.SetImpliedSelection(System.Array.Empty<ObjectId>());
 				return impliedSel;
 			}
 			PromptSelectionOptions pso = new PromptSelectionOptions { MessageForAdding = promptMsg };

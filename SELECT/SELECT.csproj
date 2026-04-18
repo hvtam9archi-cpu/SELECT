@@ -121,6 +121,7 @@
     <Compile Include="UI\FilterDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Utils\SysVarGuard.cs" />
     <Compile Include="Utils\GeomUtils.cs" />
   </ItemGroup>
   <ItemGroup>
