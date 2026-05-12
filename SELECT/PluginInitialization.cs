@@ -36,6 +36,9 @@ namespace UnifiedAutoCADTools
 				// 2. Lắng nghe lúc tạo mới VÀ đóng tài liệu
 				docManager.DocumentCreated += OnDocumentCreated;
 				docManager.DocumentDestroyed += OnDocumentDestroyed;
+
+				// 3. Khởi tạo Ribbon UI
+				RibbonSetup.InitializeRibbon();
 			}
 			catch (Exception ex)
 			{

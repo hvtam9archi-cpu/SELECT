@@ -167,15 +167,13 @@ namespace UnifiedAutoCADTools.Commands
 					}
 
 					bool matchLayer, matchColor, matchLinetype, matchBlockName;
-					using (var dlg = new FilterDialog(props.IsBlock))
-					{
-						if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+					var dlg = new FilterDialogWindow(props.IsBlock);
+					if (Application.ShowModalWindow(dlg) != true) return;
 
-						matchLayer = dlg.CheckLayer;
-						matchColor = dlg.CheckColor;
-						matchLinetype = dlg.CheckLinetype;
-						matchBlockName = dlg.CheckBlockName;
-					}
+					matchLayer = dlg.CheckLayer;
+					matchColor = dlg.CheckColor;
+					matchLinetype = dlg.CheckLinetype;
+					matchBlockName = dlg.CheckBlockName;
 
 					// Xây dựng SelectionFilter tối ưu Core C++
 					List<TypedValue> filterValues = new List<TypedValue>

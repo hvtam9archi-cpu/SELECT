@@ -1,30 +1,17 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<ApplicationPackage 
-    SchemaVersion="1.0" 
-    AutodeskProduct="AutoCAD" 
-    Name="SELECT Tools" 
-    Description="Bộ công cụ chọn và quản lý hiển thị đối tượng cho AutoCAD." 
-    AppVersion="1.0.0.0" 
-    Author="TamHoang">
-    
-    <CompanyDetails Name="TamHoang Tools" Url="" Email="" />
-
-    <Components>
-        <RuntimeRequirements OS="Win64" Platform="AutoCAD" SeriesMin="R19.0" />
-        <ComponentEntry 
-            AppName="SELECT" 
-            ModuleName="./Contents/SELECT.dll" 
-            AppDescription="SELECT Commands" 
-            LoadOnCommandInvocation="True" 
-            LoadOnAutoCADStartup="False">
-            <Commands GroupName="SELECTCmds">
-                <Command Local="RS" Global="RS" />
-                <Command Local="SS" Global="SS" />
-                <Command Local="SSADV" Global="SSADV" />
-                <Command Local="AQ" Global="AQ" />
-                <Command Local="QA" Global="QA" />
-                <Command Local="QQ" Global="QQ" />
-            </Commands>
-        </ComponentEntry>
-    </Components>
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationPackage SchemaVersion="1.0" AppVersion="1.0.0" Name="SELECT Tools" ProductCode="{37A66D4A-083D-48CC-8C01-841A49FA62A0}">
+  <CompanyDetails Name="TamHoang Tools" Url="" />
+  <Components>
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R24.0" SeriesMax="R24.3" />
+    <ComponentEntry AppName="SELECT" Version="1.0" ModuleName="./Contents/SELECT.dll" AppDescription="Bộ công cụ chọn và quản lý hiển thị đối tượng cho AutoCAD." LoadOnCommandInvocation="True" LoadOnAutoCADStartup="True">
+      <Commands GroupName="SELECTCmds">
+        <Command Local="RS" Global="RS" />
+        <Command Local="SS" Global="SS" />
+        <Command Local="SSADV" Global="SSADV" />
+        <Command Local="AQ" Global="AQ" />
+        <Command Local="QA" Global="QA" />
+        <Command Local="QQ" Global="QQ" />
+      </Commands>
+    </ComponentEntry>
+  </Components>
 </ApplicationPackage>
