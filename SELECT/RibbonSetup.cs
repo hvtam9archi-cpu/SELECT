@@ -1,37 +1,26 @@
-using Autodesk.Windows;
 using System;
-using System.Windows.Controls;
+using System.Windows.Input;
+using Autodesk.AutoCAD.Runtime;
+using Autodesk.Windows;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace UnifiedAutoCADTools
 {
     public static class RibbonSetup
     {
+        private const string TabId = "TH_TOOLS_TAB";
+        private const string TabTitle = "TH Tools";
+        private static RibbonCommandHandler _cmdHandler = new RibbonCommandHandler();
+
         public static void InitializeRibbon()
         {
-            try
-            {
-                if (ComponentManager.Ribbon == null)
-                {
-                    ComponentManager.ItemInitialized += ComponentManager_ItemInitialized;
-                }
-                else
-                {
-                    CreateRibbon();
-                }
-            }
-            catch
-            {
-                // Silent catch - Ribbon chưa sẵn sàng
-            }
+            Application.Idle += OnIdle;
         }
 
-        private static void ComponentManager_ItemInitialized(object sender, RibbonItemEventArgs e)
+        private static void OnIdle(object sender, EventArgs e)
         {
-            if (ComponentManager.Ribbon != null)
-            {
-                ComponentManager.ItemInitialized -= ComponentManager_ItemInitialized;
-                CreateRibbon();
-            }
+            Application.Idle -= OnIdle;
+            CreateRibbon();
         }
 
         private static void CreateRibbon()
@@ -39,107 +28,39 @@ namespace UnifiedAutoCADTools
             RibbonControl ribbon = ComponentManager.Ribbon;
             if (ribbon == null) return;
 
-            string tabTitle = "TH Tools";
-            string tabId = "THTools_Tab";
-            RibbonTab rtab = null;
-
-            foreach (RibbonTab tab in ribbon.Tabs)
+            // 1. Tìm hoặc Tạo Tab "TH Tools"
+            RibbonTab rtb = ribbon.FindTab(TabId);
+            if (rtb == null)
             {
-                if (tab.Title == tabTitle || tab.Id == tabId)
-                {
-                    rtab = tab;
-                    break;
-                }
+                rtb = new RibbonTab { Title = TabTitle, Id = TabId };
+                ribbon.Tabs.Add(rtb);
             }
 
-            if (rtab == null)
-            {
-                rtab = new RibbonTab
-                {
-                    Title = tabTitle,
-                    Id = tabId
-                };
-                ribbon.Tabs.Add(rtab);
-            }
-
-            // Check if panel already exists to prevent duplicate panels on reload
+            // 2. Tìm hoặc Tạo Panel "Selection"
             string panelId = "SELECT_Panel";
-            RibbonPanel panel = null;
-            foreach (RibbonPanel p in rtab.Panels)
+            bool panelExists = false;
+            foreach (RibbonPanel p in rtb.Panels)
             {
                 if (p.Source.Id == panelId)
                 {
-                    panel = p;
+                    panelExists = true;
                     break;
                 }
             }
 
-            if (panel == null)
+            if (!panelExists)
             {
-                RibbonPanelSource panelSrc = new RibbonPanelSource { Title = "Selection", Id = panelId };
-                panel = new RibbonPanel { Source = panelSrc };
-                rtab.Panels.Add(panel);
+                RibbonPanelSource rps = new RibbonPanelSource { Title = "Selection", Id = panelId };
+                RibbonPanel rp = new RibbonPanel { Source = rps };
 
                 // Add buttons for commands
-                RibbonButton btnSS = new RibbonButton
-                {
-                    Text = "Select Similar",
-                    ShowText = true,
-                    ShowImage = true,
-                    Image = CreateIconWpf("SS", "#2563EB", 16),
-                    LargeImage = CreateIconWpf("SS", "#2563EB", 32),
-                    Size = RibbonItemSize.Large,
-                    Orientation = Orientation.Vertical,
-                    CommandParameter = "SS ",
-                    CommandHandler = new RibbonCommandHandler()
-                };
+                RibbonButton btnSS = CreateLargeButton("SS", "Select Similar", "SS", "#2563EB");
+                RibbonButton btnSSAdv = CreateLargeButton("Adv", "Advanced Select", "SSADV", "#1D4ED8");
 
-                RibbonButton btnSSAdv = new RibbonButton
-                {
-                    Text = "Advanced Select",
-                    ShowText = true,
-                    ShowImage = true,
-                    Image = CreateIconWpf("Adv", "#1D4ED8", 16),
-                    LargeImage = CreateIconWpf("Adv", "#1D4ED8", 32),
-                    Size = RibbonItemSize.Large,
-                    Orientation = Orientation.Vertical,
-                    CommandParameter = "SSADV ",
-                    CommandHandler = new RibbonCommandHandler()
-                };
+                RibbonButton btnQQ = CreateButton("Iso", "Isolate", "QQ", "#10B981");
+                RibbonButton btnAQ = CreateButton("Hide", "Hide", "AQ", "#EF4444");
+                RibbonButton btnQA = CreateButton("Unh", "Unisolate", "QA", "#F59E0B");
 
-                RibbonButton btnQQ = new RibbonButton
-                {
-                    Text = "Isolate",
-                    ShowText = true,
-                    ShowImage = true,
-                    Image = CreateIconWpf("Iso", "#10B981", 16),
-                    Size = RibbonItemSize.Standard,
-                    CommandParameter = "QQ ",
-                    CommandHandler = new RibbonCommandHandler()
-                };
-
-                RibbonButton btnAQ = new RibbonButton
-                {
-                    Text = "Hide",
-                    ShowText = true,
-                    ShowImage = true,
-                    Image = CreateIconWpf("Hide", "#EF4444", 16),
-                    Size = RibbonItemSize.Standard,
-                    CommandParameter = "AQ ",
-                    CommandHandler = new RibbonCommandHandler()
-                };
-
-                RibbonButton btnQA = new RibbonButton
-                {
-                    Text = "Unisolate",
-                    ShowText = true,
-                    ShowImage = true,
-                    Image = CreateIconWpf("Unh", "#F59E0B", 16),
-                    Size = RibbonItemSize.Standard,
-                    CommandParameter = "QA ",
-                    CommandHandler = new RibbonCommandHandler()
-                };
-                
                 RibbonRowPanel rowPanel = new RibbonRowPanel();
                 rowPanel.Items.Add(btnQQ);
                 rowPanel.Items.Add(new RibbonRowBreak());
@@ -147,79 +68,98 @@ namespace UnifiedAutoCADTools
                 rowPanel.Items.Add(new RibbonRowBreak());
                 rowPanel.Items.Add(btnQA);
 
-                panelSrc.Items.Add(btnSS);
-                panelSrc.Items.Add(btnSSAdv);
-                panelSrc.Items.Add(new RibbonSeparator());
-                panelSrc.Items.Add(rowPanel);
+                rps.Items.Add(btnSS);
+                rps.Items.Add(btnSSAdv);
+                rps.Items.Add(new RibbonSeparator());
+                rps.Items.Add(rowPanel);
+
+                rtb.Panels.Add(rp);
             }
 
-            rtab.IsActive = true;
+            rtb.IsActive = true;
         }
 
-        private static System.Windows.Media.Imaging.BitmapImage CreateIconWpf(string text, string hexColor, int size)
+        private static RibbonButton CreateButton(string id, string text, string command, string hexColor)
         {
-            var dv = new System.Windows.Media.DrawingVisual();
-            using (var dc = dv.RenderOpen())
+            return new RibbonButton
+            {
+                Id = id,
+                Text = text,
+                ShowText = true,
+                ShowImage = true,
+                Size = RibbonItemSize.Standard,
+                Image = GetTextBitmap(id, hexColor, 16),
+                CommandParameter = "\x03\x03" + command + " ",
+                CommandHandler = _cmdHandler
+            };
+        }
+
+        private static RibbonButton CreateLargeButton(string id, string text, string command, string hexColor)
+        {
+            return new RibbonButton
+            {
+                Id = id,
+                Text = text,
+                ShowText = true,
+                ShowImage = true,
+                Size = RibbonItemSize.Large,
+                Orientation = System.Windows.Controls.Orientation.Vertical,
+                Image = GetTextBitmap(id, hexColor, 16),
+                LargeImage = GetTextBitmap(id, hexColor, 32),
+                CommandParameter = "\x03\x03" + command + " ",
+                CommandHandler = _cmdHandler
+            };
+        }
+
+        private static System.Windows.Media.ImageSource GetTextBitmap(string text, string hexColor, int size)
+        {
+            System.Windows.Media.DrawingVisual visual = new System.Windows.Media.DrawingVisual();
+            using (System.Windows.Media.DrawingContext dc = visual.RenderOpen())
             {
                 var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hexColor);
-                var brush = new System.Windows.Media.SolidColorBrush(color);
-                dc.DrawRoundedRectangle(brush, null, new System.Windows.Rect(0, 0, size, size), 4, 4);
-
-                double fontSize = size == 32 ? 11 : 8;
-                var tf = new System.Windows.Media.Typeface(new System.Windows.Media.FontFamily("Segoe UI"), System.Windows.FontStyles.Normal, System.Windows.FontWeights.Bold, System.Windows.FontStretches.Normal);
+                dc.DrawRectangle(new System.Windows.Media.SolidColorBrush(color), null, new System.Windows.Rect(0, 0, size, size));
                 
-                // VisualStudio 2022 / .NET 4.8 FormattedText constructor
-                var ft = new System.Windows.Media.FormattedText(
-                    text, 
-                    System.Globalization.CultureInfo.InvariantCulture, 
-                    System.Windows.FlowDirection.LeftToRight, 
-                    tf, 
-                    fontSize, 
-                    System.Windows.Media.Brushes.White, 
-                    1.25);
+                dc.DrawRectangle(null, new System.Windows.Media.Pen(System.Windows.Media.Brushes.White, 0.5), new System.Windows.Rect(0.5, 0.5, size - 1, size - 1));
+
+                double fontSize = size == 32 ? 14 : 9;
+                System.Windows.Media.FormattedText ft = new System.Windows.Media.FormattedText(
+                    text.Length > 3 ? text.Substring(0, 3) : text,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Windows.FlowDirection.LeftToRight,
+                    new System.Windows.Media.Typeface(new System.Windows.Media.FontFamily("Segoe UI"), System.Windows.FontStyles.Normal, System.Windows.FontWeights.Bold, System.Windows.FontStretches.Normal),
+                    fontSize,
+                    System.Windows.Media.Brushes.White,
+                    1.0);
                 
                 dc.DrawText(ft, new System.Windows.Point((size - ft.Width) / 2, (size - ft.Height) / 2));
             }
-
-            var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(size, size, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
-            rtb.Render(dv);
             
-            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
-            
-            var ms = new System.IO.MemoryStream();
-            encoder.Save(ms);
-            ms.Position = 0;
-
-            var image = new System.Windows.Media.Imaging.BitmapImage();
-            image.BeginInit();
-            image.StreamSource = ms;
-            image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-            image.EndInit();
-            image.Freeze();
-
-            return image;
+            System.Windows.Media.Imaging.RenderTargetBitmap rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(size, size, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            rtb.Render(visual);
+            return rtb;
         }
     }
 
-    public class RibbonCommandHandler : System.Windows.Input.ICommand
+    public class RibbonCommandHandler : ICommand
     {
-#pragma warning disable 0067
         public event EventHandler CanExecuteChanged;
-#pragma warning restore 0067
-
-        public bool CanExecute(object parameter)
-        {
-            return true;
-        }
+        public bool CanExecute(object parameter) => true;
 
         public void Execute(object parameter)
         {
-            RibbonButton btn = parameter as RibbonButton;
-            if (btn != null && btn.CommandParameter != null)
+            string cmd = null;
+            if (parameter is RibbonButton btn)
+                cmd = btn.CommandParameter as string;
+            else if (parameter is string s)
+                cmd = s;
+
+            if (!string.IsNullOrEmpty(cmd))
             {
-                Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument?.SendStringToExecute(
-                    (string)btn.CommandParameter, true, false, false);
+                Autodesk.AutoCAD.ApplicationServices.Document doc = Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                {
+                    doc.SendStringToExecute(cmd, true, false, true);
+                }
             }
         }
     }
