@@ -55,11 +55,11 @@ namespace UnifiedAutoCADTools
 
                 // Add buttons for commands
                 RibbonButton btnSS = CreateLargeButton("SS", "Select Similar", "SS", "#2563EB");
-                RibbonButton btnSSAdv = CreateLargeButton("Adv", "Advanced Select", "SSADV", "#1D4ED8");
+                RibbonButton btnSSAdv = CreateLargeButton("SSA", "Select Similar Advanced", "SSADV", "#1D4ED8");
 
                 RibbonButton btnQQ = CreateButton("Iso", "Isolate", "QQ", "#10B981");
                 RibbonButton btnAQ = CreateButton("Hide", "Hide", "AQ", "#EF4444");
-                RibbonButton btnQA = CreateButton("Unh", "Unisolate", "QA", "#F59E0B");
+                RibbonButton btnQA = CreateButton("Un", "Unhide", "QA", "#F59E0B");
 
                 RibbonRowPanel rowPanel = new RibbonRowPanel();
                 rowPanel.Items.Add(btnQQ);
