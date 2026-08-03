@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 
@@ -16,9 +17,19 @@ namespace UnifiedAutoCADTools.UI
         public bool CheckLinetype => cbLinetype.IsChecked == true;
         public bool CheckBlockName => cbBlock.IsChecked == true;
 
+        public FilterDialogWindow()
+            : this(false)
+        {
+        }
+
         public FilterDialogWindow(bool isBlock)
         {
             InitializeComponent();
+
+            if (DesignerProperties.GetIsInDesignMode(this))
+            {
+                return;
+            }
             
             cbLayer.IsChecked = _lastLayer;
             cbColor.IsChecked = _lastColor;
@@ -42,7 +53,10 @@ namespace UnifiedAutoCADTools.UI
             _lastLayer = cbLayer.IsChecked == true;
             _lastColor = cbColor.IsChecked == true;
             _lastLinetype = cbLinetype.IsChecked == true;
-            _lastBlock = cbBlock.IsChecked == true;
+            if (cbBlock.IsEnabled)
+            {
+                _lastBlock = cbBlock.IsChecked == true;
+            }
 
             this.DialogResult = true;
             this.Close();
